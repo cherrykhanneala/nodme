@@ -1,0 +1,28 @@
+# Install Android SDK tools
+RUN apt-get update && apt-get install -y \
+    openjdk-11-jdk \
+    wget \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /opt/android-sdk-linux
+WORKDIR /opt/android-sdk-linux
+
+# Download Android SDK
+RUN wget https://dl.google.com/android/repository/commandlinetools-linux-7302050_latest.zip
+RUN unzip commandlinetools-linux-7302050_latest.zip
+RUN rm commandlinetools-linux-7302050_latest.zip
+
+# Install SDK components
+RUN ./cmdline-tools/bin/sdkmanager --sdk_root=/opt/android-sdk-linux --update
+RUN ./cmdline-tools/bin/sdkmanager --sdk_root=/opt/android-sdk-linux "platform-tools" "platforms;android-29" "build-tools;29.0.2"
+
+# Accept Android SDK licenses
+RUN yes | ./cmdline-tools/bin/sdkmanager --sdk_root=/opt/android-sdk-linux --licenses
+
+# Add PATH for Android SDK
+ENV ANDROID_HOME=/opt/android-sdk-linux
+ENV PATH=$PATH:/opt/android-sdk-linux/platform-tools:/opt/android-sdk-linux/tools:/opt/android-sdk-linux/tools/bin
+
+# Install emulator (headless option)
+RUN ./cmdline-tools/bin/sdkmanager --sdk_root=/opt/android-sdk-linux "system-images;android-29;google_apis;x86_64" "emulator"
