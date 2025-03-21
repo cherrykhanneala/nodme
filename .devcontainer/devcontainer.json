@@ -1,28 +1,42 @@
-# Install Android SDK tools
-RUN apt-get update && apt-get install -y \
-    openjdk-11-jdk \
-    wget \
-    unzip \
-    && rm -rf /var/lib/apt/lists/*
+{
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "features": {
+    "docker": "latest"
+  },
+  "postCreateCommand": [
+    # Install required dependencies
+    "apt-get update && apt-get install -y openjdk-11-jdk wget unzip curl git bash xz-utils",
+    
+    # Install Android SDK and Tools
+    "mkdir -p /opt/android-sdk-linux",
+    "cd /opt/android-sdk-linux",
+    "wget https://dl.google.com/android/repository/commandlinetools-linux-7302050_latest.zip",
+    "unzip commandlinetools-linux-7302050_latest.zip",
+    "rm commandlinetools-linux-7302050_latest.zip",
+    "yes | ./cmdline-tools/bin/sdkmanager --sdk_root=/opt/android-sdk-linux --update",
+    "yes | ./cmdline-tools/bin/sdkmanager --sdk_root=/opt/android-sdk-linux 'platform-tools' 'platforms;android-29' 'build-tools;29.0.2'",
+    "yes | ./cmdline-tools/bin/sdkmanager --sdk_root=/opt/android-sdk-linux 'system-images;android-29;google_apis;x86_64' 'emulator'",
+    "yes | ./cmdline-tools/bin/sdkmanager --sdk_root=/opt/android-sdk-linux --licenses",
 
-RUN mkdir -p /opt/android-sdk-linux
-WORKDIR /opt/android-sdk-linux
+    # Install Flutter
+    "curl -O https://storage.googleapis.com/download.flutter.io/flutter_linux_v3.7.3-stable.tar.xz",
+    "tar -xvf flutter_linux_v3.7.3-stable.tar.xz",
+    "mv flutter /opt/flutter",
+    "rm flutter_linux_v3.7.3-stable.tar.xz",
+    
+    # Set up Flutter environment
+    "echo 'export PATH=\"/opt/flutter/bin:$PATH\"' >> ~/.bashrc",
+    "source ~/.bashrc",
 
-# Download Android SDK
-RUN wget https://dl.google.com/android/repository/commandlinetools-linux-7302050_latest.zip
-RUN unzip commandlinetools-linux-7302050_latest.zip
-RUN rm commandlinetools-linux-7302050_latest.zip
-
-# Install SDK components
-RUN ./cmdline-tools/bin/sdkmanager --sdk_root=/opt/android-sdk-linux --update
-RUN ./cmdline-tools/bin/sdkmanager --sdk_root=/opt/android-sdk-linux "platform-tools" "platforms;android-29" "build-tools;29.0.2"
-
-# Accept Android SDK licenses
-RUN yes | ./cmdline-tools/bin/sdkmanager --sdk_root=/opt/android-sdk-linux --licenses
-
-# Add PATH for Android SDK
-ENV ANDROID_HOME=/opt/android-sdk-linux
-ENV PATH=$PATH:/opt/android-sdk-linux/platform-tools:/opt/android-sdk-linux/tools:/opt/android-sdk-linux/tools/bin
-
-# Install emulator (headless option)
-RUN ./cmdline-tools/bin/sdkmanager --sdk_root=/opt/android-sdk-linux "system-images;android-29;google_apis;x86_64" "emulator"
+    # Check flutter setup (to verify that Flutter is installed correctly)
+    "flutter doctor"
+  ],
+  "settings": {
+    "terminal.integrated.shell.linux": "/bin/bash"
+  },
+  "mounts": [
+    "source=/opt/android-sdk-linux,target=/opt/android-sdk-linux,type=bind",
+    "source=/opt/flutter,target=/opt/flutter,type=bind"
+  ],
+  "remoteUser": "vscode"
+}
